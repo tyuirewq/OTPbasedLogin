@@ -251,7 +251,9 @@
 
         showStatus('Account created and profile saved. Signed in.', 'ok');
         updateCurrentUserUI(user);
-        showSignin();
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 500);
       } catch (err) {
         showStatus('Sign up failed: ' + err.message, 'err');
       }
@@ -259,18 +261,24 @@
 
     // Sign in
     async function signIn() {
-      const email = document.getElementById('si-email').value.trim();
-      const password = document.getElementById('si-password').value;
-
-      try {
-        const credential = await auth.signInWithEmailAndPassword(email, password);
-        const user = credential.user;
-        showStatus('Signed in successfully', 'ok');
-        updateCurrentUserUI(user);
-      } catch (err) {
-        showStatus('Sign in failed: ' + err.message, 'err');
-      }
+    const email = document.getElementById('si-email').value.trim();
+    const password = document.getElementById('si-password').value;
+  
+    try {
+      const credential = await auth.signInWithEmailAndPassword(email, password);
+      const user = credential.user;
+      showStatus('Signed in successfully. Redirecting...', 'ok');
+      updateCurrentUserUI(user);
+      
+      // Redirect to dashboard after successful sign in
+      setTimeout(() => {
+        window.location.href = 'dashboard.html';
+      }, 500); // 0.5 second delay to show success message
+      
+    } catch (err) {
+      showStatus('Sign in failed: ' + err.message, 'err');
     }
+  }
 
     // Send password reset
     async function sendReset() {
@@ -307,18 +315,32 @@
     }
 
     auth.onAuthStateChanged(async (user) => {
-      updateCurrentUserUI(user);
-      if (user) {
-        // Optionally read profile info from database
-        const snapshot = await db.ref('users/' + user.uid).get();
-        if (snapshot.exists()) {
-          // You can use snapshot.val() to fill UI
-        } else {
-          // If profile missing create minimal
-          await db.ref('users/' + user.uid).set({ email: user.email, createdAt: Date.now() });
-        }
-      }
-    });
+  updateCurrentUserUI(user);
+  
+  if (user) {
+    // Check if we're on the login page and user is already authenticated
+    if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
+      // User is already logged in, redirect to dashboard
+      showStatus('Already signed in. Redirecting to dashboard...', 'ok');
+      setTimeout(() => {
+        window.location.href = 'dashboard.html';
+      }, 1000);
+      return;
+    }
+    
+    // Optionally read profile info from database
+    const snapshot = await db.ref('users/' + user.uid).get();
+    if (snapshot.exists()) {
+      // You can use snapshot.val() to fill UI
+    } else {
+      // If profile missing create minimal
+      await db.ref('users/' + user.uid).set({ 
+        email: user.email, 
+        createdAt: Date.now() 
+      });
+    }
+  }
+});
 
     // Quick guard for GitHub Pages caching issue with realtime rules
     // Ensure your Realtime Database rules allow authenticated users to read/write their profile

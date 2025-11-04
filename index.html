@@ -2,8 +2,9 @@
 <html>
 <head>
   <title>Firebase + GitHub Pages</title>
-  <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js"></script>
+  <!-- Firebase compat SDKs for non-module environments -->
+  <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-database-compat.js"></script>
 </head>
 <body>
   <h1>My Firebase Website</h1>
@@ -11,6 +12,35 @@
   <button onclick="saveMessage()">Save</button>
   <ul id="messagesList"></ul>
 
-  <script src="app.js"></script>
+  <script>
+    // ✅ Replace with your actual Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBImV4-QroenwecFE2Nk53MeJGQt-aWE2o",
+      authDomain: "studio-1263535307-205e6.firebaseapp.com",
+      databaseURL: "https://studio-1263535307-205e6-default-rtdb.firebaseio.com",
+      projectId: "studio-1263535307-205e6",
+      storageBucket: "studio-1263535307-205e6.firebasestorage.app",
+      messagingSenderId: "240447378915",
+      appId: "1:240447378915:web:a69dc620dab3158851fcd6"
+    };
+    // ✅ Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    function saveMessage() {
+      const message = document.getElementById("messageInput").value;
+      db.ref("messages").push().set({
+        text: message
+      });
+      document.getElementById("messageInput").value = "";
+    }
+
+    // ✅ Listen for new messages
+    db.ref("messages").on("child_added", function(snapshot) {
+      const li = document.createElement("li");
+      li.textContent = snapshot.val().text;
+      document.getElementById("messagesList").appendChild(li);
+    });
+  </script>
 </body>
 </html>

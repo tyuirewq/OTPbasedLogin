@@ -1,46 +1,327 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Firebase + GitHub Pages</title>
-  <!-- Firebase compat SDKs for non-module environments -->
+  <meta charset="utf-8" />
+  <title>Login with Firebase</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- Firebase compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-database-compat.js"></script>
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #0b1220;
+      --accent: #7c3aed;
+      --muted: #94a3b8;
+      --success: #10b981;
+      --danger: #ef4444;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg,#020617 0%, #061428 60%);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      color: #e6eef8;
+    }
+    .container {
+      width: 100%;
+      max-width: 980px;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 28px;
+      align-items: center;
+    }
+    .hero {
+      padding: 28px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.03);
+    }
+    .hero h1 { margin: 0 0 8px 0; font-size: 28px; }
+    .hero p { margin: 0; color: var(--muted); line-height: 1.5; }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.04);
+      padding: 22px;
+      border-radius: 12px;
+    }
+    .tabs { display:flex; gap:8px; margin-bottom: 18px; }
+    .tab {
+      flex: 1;
+      padding:10px 12px;
+      background: rgba(255,255,255,0.02);
+      border-radius: 8px;
+      text-align:center;
+      cursor:pointer;
+      color:var(--muted);
+      user-select:none;
+    }
+    .tab.active { background: linear-gradient(90deg, rgba(124,58,237,0.16), rgba(124,58,237,0.08)); color: #fff; box-shadow: 0 6px 18px rgba(124,58,237,0.08); }
+    form { display:flex; flex-direction:column; gap:12px; }
+    label { font-size:13px; color:var(--muted); }
+    input[type="text"], input[type="email"], input[type="password"] {
+      width:100%;
+      padding:10px 12px;
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,0.04);
+      background: rgba(255,255,255,0.01);
+      color: #e6eef8;
+      font-size:14px;
+      outline: none;
+    }
+    .row { display:flex; gap:8px; }
+    button.primary {
+      background: linear-gradient(90deg, var(--accent), #5b21b6);
+      color:white;
+      border:none;
+      padding:10px 14px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:600;
+    }
+    button.ghost {
+      background:transparent;
+      border:1px solid rgba(255,255,255,0.06);
+      color:var(--muted);
+      padding:10px;
+      border-radius:10px;
+      cursor:pointer;
+    }
+    .muted { color:var(--muted); font-size:13px; }
+    .status { font-size:13px; padding:8px 10px; border-radius:8px; }
+    .status.ok { background: rgba(16,185,129,0.08); color:var(--success); border:1px solid rgba(16,185,129,0.08); }
+    .status.err { background: rgba(239,68,68,0.06); color:var(--danger); border:1px solid rgba(239,68,68,0.06); }
+    .small-link { color: #c7b3ff; cursor:pointer; text-decoration: underline; font-size:13px; }
+    .center { text-align:center; }
+    @media (max-width: 880px) {
+      .container { grid-template-columns: 1fr; }
+      .hero { order: 2; }
+    }
+  </style>
 </head>
 <body>
-  <h1>My Firebase Website</h1>
-  <input type="text" id="messageInput" placeholder="Enter a message" />
-  <button onclick="saveMessage()">Save</button>
-  <ul id="messagesList"></ul>
+  <div class="container">
+    <div class="hero card">
+      <h1>Welcome to SecureApp</h1>
+      <p>Sign in to access your dashboard, or create a new account. Password resets are handled securely via your email.</p>
+      <hr style="margin:16px 0; border: none; border-top:1px solid rgba(255,255,255,0.03);" />
+      <div class="muted">Why this setup</div>
+      <ul style="color:var(--muted); margin-top:8px;">
+        <li>Authentication by Firebase Auth so passwords never land in your DB</li>
+        <li>Small user profile stored in Realtime Database for app data</li>
+        <li>Works directly on GitHub Pages without bundlers</li>
+      </ul>
+    </div>
+
+    <div class="card" style="padding:18px;">
+      <div class="tabs" role="tablist">
+        <div id="tab-signin" class="tab active">Sign In</div>
+        <div id="tab-signup" class="tab">Sign Up</div>
+      </div>
+
+      <div id="statusBox" class="status" style="display:none;"></div>
+
+      <div id="form-signin">
+        <form onsubmit="event.preventDefault(); signIn();">
+          <label for="si-email">Email</label>
+          <input id="si-email" type="email" required />
+          <label for="si-password">Password</label>
+          <input id="si-password" type="password" required />
+          <div class="row" style="margin-top:6px;">
+            <button class="primary" type="submit">Sign In</button>
+            <button type="button" class="ghost" onclick="showForgot()">Forgot Password</button>
+          </div>
+          <div class="center" style="margin-top:8px;">
+            <span class="muted">No account?</span>
+            <span class="small-link" onclick="showSignup()"> Create one</span>
+          </div>
+        </form>
+      </div>
+
+      <div id="form-signup" style="display:none;">
+        <form onsubmit="event.preventDefault(); signUp();">
+          <label for="su-name">Full name</label>
+          <input id="su-name" type="text" required />
+          <label for="su-email">Email</label>
+          <input id="su-email" type="email" required />
+          <label for="su-password">Password</label>
+          <input id="su-password" type="password" minlength="6" required />
+          <div class="row" style="margin-top:6px;">
+            <button class="primary" type="submit">Create account</button>
+            <button type="button" class="ghost" onclick="showSignin()">Back to Sign In</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="form-forgot" style="display:none;">
+        <form onsubmit="event.preventDefault(); sendReset();">
+          <label for="fp-email">Enter your account email</label>
+          <input id="fp-email" type="email" required />
+          <div class="row" style="margin-top:6px;">
+            <button class="primary" type="submit">Send reset email</button>
+            <button type="button" class="ghost" onclick="showSignin()">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <hr style="margin:16px 0; border: none; border-top:1px solid rgba(255,255,255,0.03);" />
+
+      <div class="center muted">
+        Signed in user:
+        <span id="currentUser">Not signed in</span>
+        <div style="margin-top:8px;">
+          <button class="ghost" onclick="signOut()">Sign Out</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
-    // ✅ Replace with your actual Firebase config
+    // Replace with your Firebase project config
     const firebaseConfig = {
-      apiKey: "AIzaSyBImV4-QroenwecFE2Nk53MeJGQt-aWE2o",
-      authDomain: "studio-1263535307-205e6.firebaseapp.com",
-      databaseURL: "https://studio-1263535307-205e6-default-rtdb.firebaseio.com",
-      projectId: "studio-1263535307-205e6",
-      storageBucket: "studio-1263535307-205e6.firebasestorage.app",
-      messagingSenderId: "240447378915",
-      appId: "1:240447378915:web:a69dc620dab3158851fcd6"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
-    // ✅ Initialize Firebase
+
+    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
     const db = firebase.database();
 
-    function saveMessage() {
-      const message = document.getElementById("messageInput").value;
-      db.ref("messages").push().set({
-        text: message
-      });
-      document.getElementById("messageInput").value = "";
+    // UI helpers
+    const statusBox = document.getElementById('statusBox');
+    function showStatus(text, type = 'ok') {
+      statusBox.style.display = 'block';
+      statusBox.textContent = text;
+      statusBox.className = 'status ' + (type === 'err' ? 'err' : 'ok');
+      setTimeout(() => { statusBox.style.display = 'none'; }, 6000);
     }
 
-    // ✅ Listen for new messages
-    db.ref("messages").on("child_added", function(snapshot) {
-      const li = document.createElement("li");
-      li.textContent = snapshot.val().text;
-      document.getElementById("messagesList").appendChild(li);
+    // Tab UI
+    const tabSignin = document.getElementById('tab-signin');
+    const tabSignup = document.getElementById('tab-signup');
+    function showSignin() {
+      tabSignin.classList.add('active'); tabSignup.classList.remove('active');
+      document.getElementById('form-signin').style.display = ''; document.getElementById('form-signup').style.display = 'none'; document.getElementById('form-forgot').style.display = 'none';
+    }
+    function showSignup() {
+      tabSignup.classList.add('active'); tabSignin.classList.remove('active');
+      document.getElementById('form-signup').style.display = ''; document.getElementById('form-signin').style.display = 'none'; document.getElementById('form-forgot').style.display = 'none';
+    }
+    function showForgot() {
+      tabSignin.classList.remove('active'); tabSignup.classList.remove('active');
+      document.getElementById('form-forgot').style.display = ''; document.getElementById('form-signin').style.display = 'none'; document.getElementById('form-signup').style.display = 'none';
+    }
+    tabSignin.onclick = showSignin;
+    tabSignup.onclick = showSignup;
+
+    // Sign up
+    async function signUp() {
+      const name = document.getElementById('su-name').value.trim();
+      const email = document.getElementById('su-email').value.trim();
+      const password = document.getElementById('su-password').value;
+
+      if (!name || !email || password.length < 6) {
+        showStatus('Please enter valid name, email and a password with at least 6 characters', 'err');
+        return;
+      }
+
+      try {
+        const credential = await auth.createUserWithEmailAndPassword(email, password);
+        const user = credential.user;
+
+        // Save a minimal profile to Realtime Database
+        await db.ref('users/' + user.uid).set({
+          name: name,
+          email: email,
+          createdAt: Date.now()
+        });
+
+        showStatus('Account created and profile saved. Signed in.', 'ok');
+        updateCurrentUserUI(user);
+        showSignin();
+      } catch (err) {
+        showStatus('Sign up failed: ' + err.message, 'err');
+      }
+    }
+
+    // Sign in
+    async function signIn() {
+      const email = document.getElementById('si-email').value.trim();
+      const password = document.getElementById('si-password').value;
+
+      try {
+        const credential = await auth.signInWithEmailAndPassword(email, password);
+        const user = credential.user;
+        showStatus('Signed in successfully', 'ok');
+        updateCurrentUserUI(user);
+      } catch (err) {
+        showStatus('Sign in failed: ' + err.message, 'err');
+      }
+    }
+
+    // Send password reset
+    async function sendReset() {
+      const email = document.getElementById('fp-email').value.trim();
+      if (!email) { showStatus('Enter your email address', 'err'); return; }
+      try {
+        await auth.sendPasswordResetEmail(email);
+        showStatus('Password reset email sent. Check your inbox.', 'ok');
+        showSignin();
+      } catch (err) {
+        showStatus('Reset failed: ' + err.message, 'err');
+      }
+    }
+
+    // Sign out
+    async function signOut() {
+      try {
+        await auth.signOut();
+        showStatus('Signed out', 'ok');
+        updateCurrentUserUI(null);
+      } catch (err) {
+        showStatus('Sign out failed: ' + err.message, 'err');
+      }
+    }
+
+    // Update UI when auth state changes
+    const currentUserEl = document.getElementById('currentUser');
+    function updateCurrentUserUI(user) {
+      if (user) {
+        currentUserEl.textContent = user.email + ' (' + user.uid.slice(0,6) + ')';
+      } else {
+        currentUserEl.textContent = 'Not signed in';
+      }
+    }
+
+    auth.onAuthStateChanged(async (user) => {
+      updateCurrentUserUI(user);
+      if (user) {
+        // Optionally read profile info from database
+        const snapshot = await db.ref('users/' + user.uid).get();
+        if (snapshot.exists()) {
+          // You can use snapshot.val() to fill UI
+        } else {
+          // If profile missing create minimal
+          await db.ref('users/' + user.uid).set({ email: user.email, createdAt: Date.now() });
+        }
+      }
     });
+
+    // Quick guard for GitHub Pages caching issue with realtime rules
+    // Ensure your Realtime Database rules allow authenticated users to read/write their profile
   </script>
 </body>
 </html>

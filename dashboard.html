@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>Devices Dashboard</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 
   <!-- Firebase compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app-compat.js"></script>
@@ -11,99 +11,203 @@
   <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-database-compat.js"></script>
 
   <style>
-    :root {
-      --bg: #0b1220;
-      --card: #07101a;
-      --accent: #06b6d4;
-      --muted: #94a3b8;
-      --on: #10b981;
-      --off: #ef4444;
+    :root{
+      --bg-1:#041029;
+      --bg-2:#071228;
+      --card:#07101a;
+      --accent:#06b6d4;
+      --muted:#94a3b8;
+      --on:#10b981;
+      --off:#ef4444;
+      --glass: rgba(255,255,255,0.03);
+      --radius:12px;
+      --gap:12px;
+      --fw-semibold:600;
       color-scheme: dark;
     }
-    * { box-sizing: border-box; }
-    body {
-      margin:0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-      background: linear-gradient(180deg,#041029 0%, #071228 70%);
-      color:#e6eef8; min-height:100vh; padding:20px;
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;
+      background: linear-gradient(180deg,var(--bg-1) 0%, var(--bg-2) 72%);
+      color:#e6eef8;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:16px;
     }
-    .wrap { max-width:1100px; margin:0 auto; }
-    header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:18px; }
-    header h1 { margin:0; font-size:20px; }
-    .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
-    .card {
-      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-      border:1px solid rgba(255,255,255,0.04);
-      padding:14px; border-radius:10px;
+
+    /* Layout container */
+    .wrap{
+      max-width:1200px;
+      margin:0 auto;
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+      min-height:calc(100vh - 32px);
     }
-    .stats { display:flex; gap:12px; }
-    .stat { padding:12px 16px; border-radius:8px; min-width:120px; text-align:center; }
-    .stat .num { font-size:22px; font-weight:700; margin-bottom:6px; }
-    .controls { margin-left:auto; display:flex; gap:8px; align-items:center; }
-    button { cursor:pointer; border: none; border-radius:8px; padding:8px 12px; font-weight:600; }
-    .btn-primary { background: linear-gradient(90deg,var(--accent), #3b82f6); color:#031026; }
-    .btn-ghost { background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--muted); }
-    #devicesGrid { display:grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap:12px; margin-top:16px; }
-    .device {
-      display:flex; justify-content:space-between; align-items:center; gap:12px;
-      padding:10px; border-radius:8px; transition:transform .12s;
+
+    header{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
     }
-    .device:hover { transform: translateY(-4px); }
-    .device .meta { display:flex; flex-direction:column; gap:4px; }
-    .device .name { font-weight:700; }
-    .device .small { color:var(--muted); font-size:13px; }
-    .toggle-btn {
-      min-width:86px; padding:8px; border-radius:8px; color:white; font-weight:700;
+    .title {
+      display:flex;
+      gap:12px;
+      align-items:center;
     }
-    .on { background: linear-gradient(90deg, rgba(16,185,129,0.14), rgba(16,185,129,0.08)); border:1px solid rgba(16,185,129,0.12); color:var(--on); }
-    .off { background: linear-gradient(90deg, rgba(239,68,68,0.08), rgba(239,68,68,0.04)); border:1px solid rgba(239,68,68,0.08); color:var(--off); }
-    .device .meta .small .muted { color:var(--muted); }
-    /* modal */
-    .modal-back { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; padding:20px; }
-    .modal { background:var(--card); padding:18px; border-radius:10px; width:100%; max-width:420px; border:1px solid rgba(255,255,255,0.04); }
-    input, select { width:100%; padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:inherit; }
-    footer { margin-top:22px; color:var(--muted); font-size:13px; text-align:center; }
-    @media (max-width:600px) { header { flex-direction:column; align-items:flex-start; gap:10px; } .controls { margin-left:0; } }
+    .logo {
+      width:48px; height:48px; border-radius:10px;
+      background:linear-gradient(135deg,var(--accent),#3b82f6); display:grid; place-items:center;
+      color:#021025; font-weight:700; font-size:18px;
+    }
+    h1{margin:0;font-size:18px}
+
+    /* Controls */
+    .controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .stats {
+      display:flex;
+      gap:10px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.01));
+      border:1px solid var(--glass);
+      padding:8px;
+      border-radius:10px;
+      align-items:center;
+    }
+    .stat{
+      min-width:86px; text-align:center; padding:8px 12px; border-radius:8px;
+      background:transparent;
+    }
+    .stat .num{font-size:18px;font-weight:700}
+    .stat .lbl{font-size:12px;color:var(--muted)}
+
+    button{
+      cursor:pointer;
+      border:0;
+      padding:10px 14px;
+      border-radius:10px;
+      font-weight:var(--fw-semibold);
+      display:inline-flex; align-items:center; gap:8px;
+    }
+    .btn-primary{background:linear-gradient(90deg,var(--accent),#3b82f6); color:#051029}
+    .btn-ghost{background:transparent;border:1px solid var(--glass); color:var(--muted); padding:10px 12px}
+
+    /* Devices grid */
+    main{flex:1; display:flex; flex-direction:column; gap:14px}
+    .devices-wrap{display:grid; grid-template-columns: repeat(3, 1fr); gap:var(--gap);}
+    .device{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+      padding:12px;
+      border-radius:10px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
+      border:1px solid var(--glass);
+      transition:transform .12s, box-shadow .12s;
+      min-height:72px;
+    }
+    .device:active{transform:translateY(1px)}
+    .meta{display:flex; flex-direction:column; gap:6px; min-width:0}
+    .name{font-weight:700; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+    .small{font-size:13px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+    .toggle-btn{
+      min-width:84px;
+      padding:10px 12px;
+      border-radius:10px;
+      font-weight:700;
+      color:#fff;
+      border:0;
+      display:inline-flex; align-items:center; justify-content:center;
+      touch-action:manipulation;
+      user-select:none;
+    }
+    .on{ background:linear-gradient(90deg, rgba(16,185,129,0.12), rgba(16,185,129,0.06)); color:var(--on); border:1px solid rgba(16,185,129,0.12) }
+    .off{ background:linear-gradient(90deg, rgba(239,68,68,0.06), rgba(239,68,68,0.03)); color:var(--off); border:1px solid rgba(239,68,68,0.08) }
+
+    /* Modal */
+    .modal-back{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:18px; background:rgba(1,6,12,0.6); z-index:60 }
+    .modal{ width:100%; max-width:480px; background:var(--card); padding:16px; border-radius:12px; border:1px solid var(--glass) }
+
+    /* Footer */
+    footer{ color:var(--muted); font-size:13px; text-align:center; padding:8px 0 }
+
+    /* Responsiveness */
+    @media (max-width:1100px){
+      .devices-wrap{ grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width:720px){
+      header{align-items:flex-start}
+      .devices-wrap{ grid-template-columns: 1fr; }
+      .controls{ width:100%; justify-content:space-between; }
+      .stats{ flex:1; justify-content:space-between; padding:10px }
+      .stat{ min-width:72px; padding:8px }
+      .logo{ width:44px; height:44px }
+      .btn-primary, .btn-ghost{ padding:12px 14px; font-size:15px; border-radius:12px }
+    }
+    @media (max-width:420px){
+      body{ padding:10px }
+      .logo{ width:40px; height:40px; font-size:16px }
+      .name{font-size:14px}
+      .small{font-size:12px}
+      .toggle-btn{ min-width:72px; padding:10px }
+      .stat .num{font-size:16px}
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <h1>Devices Dashboard</h1>
-      <div class="controls">
-        <div id="counts" class="card row stats" style="align-items:center;">
-          <div class="stat"><div class="num" id="totalCount">0</div><div class="small">Total</div></div>
-          <div class="stat"><div class="num" id="onCount">0</div><div class="small">ON</div></div>
-          <div class="stat"><div class="num" id="offCount">0</div><div class="small">OFF</div></div>
+      <div class="title">
+        <div class="logo">DB</div>
+        <div>
+          <h1>Devices Dashboard</h1>
+          <div style="color:var(--muted); font-size:13px">Realtime control & status</div>
         </div>
-        <button id="btnAdd" class="btn-primary" style="margin-left:12px;">Add Device</button>
+      </div>
+
+      <div class="controls" role="toolbar" aria-label="Controls">
+        <div class="stats" aria-hidden="false">
+          <div class="stat"><div class="num" id="totalCount">0</div><div class="lbl">Total</div></div>
+          <div class="stat"><div class="num" id="onCount">0</div><div class="lbl">ON</div></div>
+          <div class="stat"><div class="num" id="offCount">0</div><div class="lbl">OFF</div></div>
+        </div>
+
+        <button id="btnAdd" class="btn-primary" aria-haspopup="dialog">Add Device</button>
         <button id="btnSignOut" class="btn-ghost">Sign Out</button>
       </div>
     </header>
 
-    <section id="devicesGrid" aria-live="polite"></section>
+    <main>
+      <div id="devicesGrid" class="devices-wrap" aria-live="polite"></div>
 
-    <div class="modal-back" id="modalBack">
-      <div class="modal card">
-        <h3 id="modalTitle">Add Device</h3>
-        <div style="margin-top:8px;">
-          <label class="small">Device name</label>
-          <input id="devName" type="text" placeholder="e.g., Living Room Light" />
-        </div>
-        <div style="margin-top:8px;">
-          <label class="small">Initial state</label>
-          <select id="devState">
-            <option value="off">Off</option>
-            <option value="on">On</option>
-          </select>
-        </div>
-        <div style="display:flex; gap:8px; margin-top:12px; justify-content:flex-end;">
-          <button id="modalCancel" class="btn-ghost">Cancel</button>
-          <button id="modalSave" class="btn-primary">Save</button>
+      <div class="modal-back" id="modalBack" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="modal" role="document">
+          <h3 id="modalTitle">Add Device</h3>
+          <div style="margin-top:10px">
+            <label class="small">Device name</label>
+            <input id="devName" type="text" autocomplete="off" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--glass); background:transparent; color:inherit" placeholder="e.g., Living Room Light" />
+          </div>
+          <div style="margin-top:10px">
+            <label class="small">Initial state</label>
+            <select id="devState" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--glass); background:transparent; color:inherit">
+              <option value="off">Off</option>
+              <option value="on">On</option>
+            </select>
+          </div>
+          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px">
+            <button id="modalCancel" class="btn-ghost">Cancel</button>
+            <button id="modalSave" class="btn-primary">Save</button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <footer>Realtime updates from Firebase Realtime Database</footer>
+      <footer>Realtime updates using Firebase Realtime Database</footer>
+    </main>
   </div>
 
   <script>
@@ -123,7 +227,7 @@
     const auth = firebase.auth();
     const db = firebase.database();
 
-    // UI elements
+    // UI refs
     const devicesGrid = document.getElementById('devicesGrid');
     const totalCountEl = document.getElementById('totalCount');
     const onCountEl = document.getElementById('onCount');
@@ -137,72 +241,79 @@
     const devNameInput = document.getElementById('devName');
     const devStateSelect = document.getElementById('devState');
 
-    // state
-    let devices = {}; // local snapshot mapping id -> data
+    let devices = {}; // local snapshot
 
-    // Helpers
-    function showModal() { modalBack.style.display = 'flex'; devNameInput.value = ''; devStateSelect.value = 'off'; devNameInput.focus(); }
-    function hideModal() { modalBack.style.display = 'none'; }
-    modalCancel.onclick = hideModal;
-    btnAdd.onclick = showModal;
+    // modal helpers
+    function openModal(){
+      modalBack.style.display = 'flex';
+      modalBack.setAttribute('aria-hidden','false');
+      devNameInput.value = '';
+      devStateSelect.value = 'off';
+      setTimeout(()=>devNameInput.focus(),50);
+    }
+    function closeModal(){
+      modalBack.style.display = 'none';
+      modalBack.setAttribute('aria-hidden','true');
+    }
 
-    // Sign-out button
+    btnAdd.addEventListener('click', openModal);
+    modalCancel.addEventListener('click', closeModal);
+    modalBack.addEventListener('click', (e)=>{ if(e.target===modalBack) closeModal(); });
+
+    // Sign out and redirect
     btnSignOut.onclick = async () => {
       await auth.signOut();
-      // Redirect to login page (adjust file name/path as needed)
       window.location.href = 'index.html';
     };
 
-    // Build device card
-    function renderDeviceCard(id, data) {
-      // container
+    // render single device
+    function renderDeviceCard(id, data){
       const el = document.createElement('div');
-      el.className = 'card device';
+      el.className = 'device';
       el.dataset.id = id;
 
-      // meta
       const meta = document.createElement('div');
       meta.className = 'meta';
+
       const nameEl = document.createElement('div');
       nameEl.className = 'name';
+      nameEl.title = data.name || '';
       nameEl.textContent = data.name || ('Device ' + id);
+
       const infoEl = document.createElement('div');
-      infoEl.className = 'small muted';
-      const stateText = (data.state === 'on') ? 'On' : 'Off';
-      infoEl.innerHTML = `${stateText} • ${data.createdAt ? new Date(data.createdAt).toLocaleString() : ''}`;
+      infoEl.className = 'small';
+      const ts = data.createdAt ? new Date(data.createdAt).toLocaleString() : '';
+      infoEl.textContent = (data.state === 'on' ? 'On' : 'Off') + (ts ? ' • ' + ts : '');
 
       meta.appendChild(nameEl);
       meta.appendChild(infoEl);
 
-      // toggle button
       const btn = document.createElement('button');
       btn.className = 'toggle-btn ' + (data.state === 'on' ? 'on' : 'off');
       btn.textContent = (data.state === 'on' ? 'ON' : 'OFF');
-      btn.onclick = () => toggleDeviceState(id, data);
+      btn.setAttribute('aria-pressed', data.state === 'on' ? 'true' : 'false');
+      btn.onclick = () => toggleDeviceState(id);
 
       el.appendChild(meta);
       el.appendChild(btn);
       return el;
     }
 
-    // Render all devices grid from local devices map
-    function renderDevicesGrid() {
+    // render grid
+    function renderDevicesGrid(){
       devicesGrid.innerHTML = '';
-      // sort by createdAt descending then name
-      const sorted = Object.keys(devices).sort((a,b) => {
-        const A = devices[a].createdAt || 0;
-        const B = devices[b].createdAt || 0;
-        return B - A;
-      });
-      sorted.forEach(id => {
-        const el = renderDeviceCard(id, devices[id]);
-        devicesGrid.appendChild(el);
-      });
+      const keys = Object.keys(devices || {});
+      // sort by createdAt desc
+      keys.sort((a,b) => (devices[b].createdAt || 0) - (devices[a].createdAt || 0));
+      for(const id of keys){
+        const node = renderDeviceCard(id, devices[id]);
+        devicesGrid.appendChild(node);
+      }
       updateCounts();
     }
 
-    function updateCounts() {
-      const ids = Object.keys(devices);
+    function updateCounts(){
+      const ids = Object.keys(devices || {});
       const total = ids.length;
       const onCount = ids.filter(i => devices[i].state === 'on').length;
       const offCount = total - onCount;
@@ -211,91 +322,79 @@
       offCountEl.textContent = offCount;
     }
 
-    // Toggle device state — flips between 'on' and 'off' and writes to DB
-    function toggleDeviceState(id, currentData) {
-      const nextState = (currentData.state === 'on') ? 'off' : 'on';
-      const updates = {
-        state: nextState,
-        updatedAt: Date.now()
-      };
-      // apply optimistic UI update locally
-      devices[id] = Object.assign({}, currentData, updates);
+    // Toggle state with optimistic UI
+    function toggleDeviceState(id){
+      if(!devices[id]) return;
+      const current = devices[id];
+      const next = current.state === 'on' ? 'off' : 'on';
+      const updates = { state: next, updatedAt: Date.now() };
+
+      // optimistic update
+      devices[id] = Object.assign({}, current, updates);
       renderDevicesGrid();
 
-      // write to DB
-      db.ref('devices/' + id).update(updates).catch(err => {
-        console.error('Toggle write failed', err);
-        // rollback by reloading snapshot from DB (simple approach)
-        db.ref('devices/' + id).get().then(snap => {
-          if (snap.exists()) devices[id] = snap.val();
-          renderDevicesGrid();
+      db.ref('devices/' + id).update(updates).catch(err=>{
+        console.error('Toggle failed', err);
+        // reload single node from DB to rollback
+        db.ref('devices/' + id).get().then(snap=>{
+          if(snap.exists()) {
+            devices[id] = snap.val();
+            renderDevicesGrid();
+          }
         });
       });
     }
 
-    // Listen for devices changes in DB
+    // DB listeners
     const devicesRef = db.ref('devices');
-    devicesRef.on('child_added', snapshot => {
-      devices[snapshot.key] = snapshot.val();
+    devicesRef.on('child_added', snap => {
+      devices[snap.key] = snap.val();
       renderDevicesGrid();
     });
-    devicesRef.on('child_changed', snapshot => {
-      devices[snapshot.key] = snapshot.val();
+    devicesRef.on('child_changed', snap => {
+      devices[snap.key] = snap.val();
       renderDevicesGrid();
     });
-    devicesRef.on('child_removed', snapshot => {
-      delete devices[snapshot.key];
+    devicesRef.on('child_removed', snap => {
+      delete devices[snap.key];
       renderDevicesGrid();
     });
 
-    // Create a new device on Save
-    modalSave.onclick = async () => {
+    // add device
+    modalSave.addEventListener('click', async ()=>{
       const name = (devNameInput.value || '').trim();
       const state = devStateSelect.value === 'on' ? 'on' : 'off';
-      if (!name) {
-        alert('Please enter a device name');
-        return;
-      }
-      // push new device with metadata
+      if(!name){ devNameInput.focus(); return alert('Please enter a device name'); }
       const newRef = db.ref('devices').push();
-      const payload = {
-        name: name,
-        state: state,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
-      try {
+      const payload = { name, state, createdAt: Date.now(), updatedAt: Date.now() };
+      try{
         await newRef.set(payload);
-        hideModal();
-      } catch (err) {
-        console.error('Failed to add device', err);
-        alert('Failed to add device: ' + err.message);
+        closeModal();
+      }catch(err){
+        console.error('Add device failed', err);
+        alert('Failed to add device: ' + (err.message || err));
       }
-    };
-
-    // Auth guard: redirect to login if not signed in; otherwise load user
-    auth.onAuthStateChanged(user => {
-      if (!user) {
-        // no user, redirect to login (adjust path if needed)
-        window.location.href = 'index.html';
-        return;
-      }
-      // optionally show user info or check role
-      // e.g., read /users/{uid} to check role if needed
-      // db.ref('users/' + user.uid).get().then(s=>{ console.log(s.val()); });
     });
 
-    // Initial fetch (in case child_added events missed)
-    devicesRef.once('value').then(snap => {
-      if (snap.exists()) {
-        devices = snap.val() || {};
-        renderDevicesGrid();
-      } else {
-        devices = {};
-        renderDevicesGrid();
-      }
-    }).catch(err => console.error('Initial devices read failed', err));
+    // initial snapshot in case events missed
+    devicesRef.once('value').then(snap=>{
+      if(snap.exists()) devices = snap.val() || {}; else devices = {};
+      renderDevicesGrid();
+    }).catch(err=> console.error('Initial read failed', err));
 
+    // auth guard
+    auth.onAuthStateChanged(user => {
+      if(!user){
+        window.location.href = 'index.html';
+      } else {
+        // optionally you can verify user role by reading /users/{uid}
+      }
+    });
+
+    // accessibility: close modal on Esc
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape' && modalBack.style.display === 'flex') closeModal();
+    });
   </script>
 </body>
 </html>
